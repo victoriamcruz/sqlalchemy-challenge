@@ -11,10 +11,22 @@ engine = create_engine("sqlite:///Resources/hawaii.sqlite")
 
 Base = automap_base()
 Base.prepare(engine, reflect=True)
+
+# checking to see if the SQLite has the necessary tables:
+print(Base.classes.keys())
+
 Measurement = Base.classes.measurement
 Station = Base.classes.station
-sesh = Session(engine)
 
+session = Session(engine)
+
+# find the last date in the database
+last_date = session.query(Measurement.date).order_by(Measurement.date.desc()).first()
+
+# Calculate the date 1 year ago from the last data point in the database
+query_date = dt.date(2017,8,23) - dt.timedelta(days=365)
+
+session.close()
 
 app = Flask(__name__)
 
@@ -40,6 +52,15 @@ def precipitation():
     results = session.query(Measurement.date, Measurement.prcp).all()
         
     session.close()
+    
+    # Create a dictionary as date the key and prcp as the value
+    precipitation = []
+    for result in results:
+        r = {}
+        r[result[0]] = result[1]
+        precipitation.append(r)
+
+    return jsonify(precipitation )
 
 @app.route("/api/v1.0/stations")
 def stations():
